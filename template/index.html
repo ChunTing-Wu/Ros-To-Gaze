@@ -1,0 +1,70 @@
+<!-- import jQuery -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<!-- Make sure to enter a valid Google Key in the Google Script at the bottom of this page -->
+    <!-- Visit https://developers.google.com/maps/documentation/javascript/get-api-key -->
+    <html>
+     <head>
+       <style type="text/css">
+         html, body { height: 100%; margin: 0; padding: 0; }
+         #map { height: 100%;
+                width:100%;}
+       </style>
+     </head>
+     <body>
+       <div id="map"></div>
+       <script>
+         var map
+         var directionsDisplay
+         var directionsService
+         var myPosition
+         var mapController  // handle to QML
+         var marker
+         var myIcon
+         var infowindow
+         var currentMarker
+         var services
+         function initMap() {
+           myPosition =  new google.maps.LatLng(22.9982912,120.219719)
+           map = new google.maps.Map(document.getElementById('map'), {
+                center: myPosition,
+                streetViewControl: false,
+                draggable: true,
+                scrollwheel: true,
+                panControl: true,
+                zoom: 13,
+            })
+            var marker = new google.maps.Marker({
+            position: new google.maps.LatLng(22.99834,120.219718),
+            title:"22.998294,120.219718"
+        });
+        marker.setMap(map);
+
+        var marker = new google.maps.Marker({
+            position: new google.maps.LatLng(22.9983,120.21972),
+            title:"22.998300,120.219720"
+        });
+        marker.setMap(map);
+       }
+       function getData() {
+        $.ajax({
+                method: "GET",
+                url: "http://127.0.0.1:8001/gpsget",
+                dataType : "json",
+                data: {},
+                success: function (data) {
+                console.log(data["lat"]) // check out how data is structured
+                var marker = new google.maps.Marker({
+                position: new google.maps.LatLng(data["lat"],data["lon"]),
+                });
+                marker.setMap(map);
+                }
+                })
+                setTimeout(getData, 1000);
+        }
+        getData();
+      </script>
+      <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key="YOUR-API-KEY"=3&callback=initMap&libraries=weather,places">
+       </script>
+     </body>
+    </html>
