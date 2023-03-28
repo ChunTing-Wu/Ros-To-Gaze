@@ -8,7 +8,6 @@
 receive nav_msgs::Odometry and publish geometry_msgs::PoseStamped
 """
 import rospy
-from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix
 
 import json
