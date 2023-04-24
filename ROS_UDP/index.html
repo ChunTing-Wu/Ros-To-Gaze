@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>WebSocket Demo</title>
+  </head>
+  <body>
+    <h1>NCKU</h1>
+    <div id="data"></div>
+    <script>
+      var ws = new WebSocket("ws://localhost:8764/");
+      var maxCount = 5;
+      var dataDiv = document.getElementById("data");
+      ws.onmessage = function(event) {
+        var p = document.createElement("p");
+        p.innerText = event.data;
+        dataDiv.appendChild(p);
+        if (dataDiv.childNodes.length > maxCount) {
+          while (dataDiv.childNodes.length > maxCount) {
+            dataDiv.removeChild(dataDiv.childNodes[0]);
+          }
+        }
+      };
+      var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'childList') {
+            while (dataDiv.childNodes.length > maxCount) {
+              dataDiv.removeChild(dataDiv.childNodes[0]);
+            }
+          }
+        });
+      });
+      observer.observe(dataDiv, { childList: true });
+    </script>
+  </body>
+</html>

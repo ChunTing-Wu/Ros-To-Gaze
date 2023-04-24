@@ -4,7 +4,9 @@ import queue
 import websocket
 import json
 import threading
-
+import signal
+import time
+import os
 class RosThread(threading.Thread):
     def callback(self, data):
         """
@@ -24,7 +26,6 @@ class RosThread(threading.Thread):
         if ws_thread:
             # Put JSON data to the queue of WebSocket thread
             ws_thread.queue.put({'data': json_data})
-
     def run(self):
         """
         main loop
@@ -44,7 +45,7 @@ class WebSocketThread(threading.Thread):
         """
         main loop
         """
-        self.ws = websocket.WebSocketApp("ws://localhost:8765", on_open=self.on_open)
+        self.ws = websocket.WebSocketApp("ws://localhost:8764", on_open=self.on_open)
         print("websocket start")
         self.ws.run_forever()
         print("run_forever")
@@ -54,30 +55,38 @@ class WebSocketThread(threading.Thread):
         WebSocket on open callback
         """
         print("start on open")
-        while True:
-            if not self.queue.empty():
-                msg = self.queue.get()
-                json_data = json.dumps({'data': msg['data']})
-                self.ws.send(json_data)
-                print(json_data)
+        try:
+            while True:
+                if not self.queue.empty():
+                    msg = self.queue.get()
+                    json_data = json.dumps({'data': msg['data']})
+                    self.ws.send(json_data)
+                    print(json_data)
+                time.sleep(0.001)
+        except KeyboardInterrupt:
+            print("Key Interrupt")
 
-    def stop(self):
-        """
-        Stop WebSocket thread
-        """
-        self.ws.close()
-        print("close")
+
+def handler_int():
+    exit()
 
 if __name__ == '__main__':
-    global ws_thread
     #ip = '127.0.0.1'
     #port = 12347
+    signal.signal(signal.SIGINT,handler_int)
+    try:
+        rospy.init_node('convert_odometry_to_pose', anonymous=True)
+        ros_thread = RosThread()
+        ws_thread = WebSocketThread()
 
-    rospy.init_node('convert_odometry_to_pose', anonymous=True)
-    ros_thread = RosThread()
-    ws_thread = WebSocketThread()
+        ros_thread.start()
+        ws_thread.start()
+        ros_thread.join(1000)
+        ws_thread.join(1000)
 
-    ros_thread.start()
-    ws_thread.start()
-    ros_thread.join()
-    ws_thread.join()
+    except KeyboardInterrupt:
+        print("GET INTERRUPT")
+        pass
+    finally:
+        print('\ndone.')
+        
