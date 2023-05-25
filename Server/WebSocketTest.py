@@ -3,7 +3,7 @@ import websockets
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 
-
+HOST_IP = "140.116.245.172"
 clients = set()
 
 async def echo(websocket, path):
@@ -21,13 +21,15 @@ async def echo(websocket, path):
 
 
 async def start_websocket_server():
-    async with websockets.serve(echo, '140.116.245.172', 8764, ping_interval=None):
+    global HOST_IP
+    async with websockets.serve(echo, HOST_IP, 8764, ping_interval=None):
         await asyncio.Future()  # Keep the server running
 
 
 def start_http_server():
-    server = TCPServer(('140.116.245.172', 7771), SimpleHTTPRequestHandler)
-    print("HTTP server running at http://140.116.245.172:8080")
+    global HOST_IP
+    server = TCPServer((HOST_IP, 7771), SimpleHTTPRequestHandler)
+    print("HTTP server running at", HOST_IP)
     server.serve_forever()
 
 

@@ -7,21 +7,43 @@ import signal
 import time
 import os
 
-
 from sensor_msgs.msg import NavSatFix
+from sensor_msgs.msg import Imu
 
 #define HOST_IP
 #define PORT
 
 HOST_IP = "140.116.245.172"
 PORT = "8764"
-
 kill_thread = False
 
 
-# message
-class RosThread(threading.Thread):
-    ros_subscriber = None
+# DEMO
+class Another_Thread(threading.Thread):
+    datalimit = 0
+
+    def Another_callback(self, data):
+        global ws_thread
+
+        data = {
+        "YOUR DATA":   data.linear_acceleration.z  }
+        json_data = json.dumps(data)
+        self.datalimit = self.datalimit + 1
+        if ws_thread:
+            # Put JSON data to the queue of WebSocket thread
+            if(self.datalimit > 5):
+                ws_thread.queue.put({'YOUR DATA': json_data})
+                self.datalimit = 0
+
+    def run(self):
+        """
+        YOUR rostopic
+        """
+        rospy.Subscriber('/carla/ego_vehicle/imu', Imu, self.Another_callback)
+        rospy.spin()
+
+class GPS_Thread(threading.Thread):
+    for_gps_demo = 0
     def gps_callback(self, data):
         global ws_thread
 
@@ -36,7 +58,10 @@ class RosThread(threading.Thread):
 
         if ws_thread:
             # Put JSON data to the queue of WebSocket thread
-            ws_thread.queue.put({'gps_data': json_data})
+            self.for_gps_demo = self.for_gps_demo + 1
+            if(self.for_gps_demo > 5):
+                ws_thread.queue.put({'gps_data': json_data})
+                self.for_gps_demo = 0
 
     def run(self):
         """
@@ -73,16 +98,12 @@ class WebSocketThread(threading.Thread):
         WebSocket callback
         """
         print("start on open")
-        gnss_times = 0
         try:
             while not kill_thread:
                 if not self.queue.empty():
                     msg = self.queue.get()
                     json_data = json.dumps({'data': msg})
-                    gnss_times = gnss_times + 1
-                    if gnss_times > 5:
-                        self.ws.send(json_data)
-                        gnss_times = 0
+                    self.ws.send(json_data)
                     #print(json_data)
                 time.sleep(0.001)
         except KeyboardInterrupt:
@@ -95,14 +116,18 @@ if __name__ == '__main__':
 
     try:
         rospy.init_node('asrlab', anonymous=True,disable_signals=False)
-        ros_thread = RosThread()
+        ros_thread = GPS_Thread()
         ws_thread = WebSocketThread()
+        another_Thread = Another_Thread()
+
 
         ros_thread.daemon = True
         ws_thread.daemon = True
+        another_Thread.daemon = True
+
         ros_thread.start()
         ws_thread.start()
-
+        another_Thread.start()
         while True:
             time.sleep(0.001)
     except KeyboardInterrupt:
