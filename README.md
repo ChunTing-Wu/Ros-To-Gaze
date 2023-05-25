@@ -39,7 +39,7 @@ The server needs to run in a Python 3.
 # Client run in Python2
 ```shell=
 pip install websocket
-python 
+python Python_Googlemap.py
 ```
 
 The client needs to run in a Python 2 with ROS.
