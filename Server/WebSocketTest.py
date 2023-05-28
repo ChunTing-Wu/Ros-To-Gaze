@@ -4,20 +4,21 @@ from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 
 HOST_IP = "140.116.245.172"
-clients = set()
+clients = {}
 
 async def echo(websocket, path):
-    clients.add(websocket)
+    clients[websocket] = websocket.remote_address
 
     try:
         async for message in websocket:
-            print(message)
-            for client in clients:
-                await client.send(message)
+            sender = websocket
+            for client, address in clients.items():
+                if client != sender:
+                    asyncio.create_task(client.send(message))
     except websockets.exceptions.ConnectionClosedError as e:
         print(f"Connection to client {websocket.remote_address} closed: {e}")
     finally:
-        clients.remove(websocket)
+        del clients[websocket]
 
 
 async def start_websocket_server():
@@ -37,10 +38,10 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     websocket_server_task = loop.create_task(start_websocket_server())
-    http_server_thread = loop.run_in_executor(None, start_http_server)
+    http_server_task = loop.run_in_executor(None, start_http_server)
 
     try:
-        loop.run_until_complete(websocket_server_task)
+        loop.run_until_complete(asyncio.wait([websocket_server_task]))
     except KeyboardInterrupt:
         pass
     finally:

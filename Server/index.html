@@ -23,6 +23,8 @@
     <h1>osm map</h1>
     <div id="map"></div>
     <div id="all_data"></div>
+    <input type="text" id="message" placeholder="輸入訊息">
+    <button id="sendButton">送出</button>
     <script>
         var GPS_maxCount = 15;
         var view_MaxCount = 15;
@@ -31,8 +33,6 @@
         var ws = new WebSocket("ws://140.116.245.172:8764/");
 
         ws.onmessage = function(event) {
-
-
             var data = event.data;
             var parsed_data = JSON.parse(data);
             var data_str = parsed_data["data"];
@@ -124,6 +124,16 @@
 
 
         }
+        // 新增送出訊息的函式
+        function sendMessage() {
+            var messageInput = document.getElementById("message");
+            var message = messageInput.value;
+            ws.send(message);
+            messageInput.value = ""; // 清空文字
+        }
+
+ 
+        document.getElementById("sendButton").addEventListener("click", sendMessage);
 
         var mymap = L.map('map').setView([22.9972292, 120.2219485], 20); // 設置地圖中心點和縮放等級
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

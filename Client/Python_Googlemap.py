@@ -87,27 +87,40 @@ class WebSocketThread(threading.Thread):
             main loop
             """
             ws_link = "ws://" + HOST_IP + ":" + PORT
-            self.ws = websocket.WebSocketApp(ws_link, on_open=self.on_open)
+            self.ws = websocket.WebSocketApp(ws_link, on_open=self.on_open,on_error=self.on_error, on_message=self.on_message) # add receive handler
             print("websocket start")
-            self.ws.run_forever()
+            #self.ws.run_forever()
+            recv_thread = threading.Thread(target=self.ws.run_forever)
+            recv_thread.start()
+            try:
+                while not kill_thread:
+                    if not self.queue.empty():
+                        msg = self.queue.get()
+                        json_data = json.dumps({'data': msg})
+                        self.ws.send(json_data)
+                        #print(json_data)
+                    time.sleep(0.001)
+            except KeyboardInterrupt:
+                 print("Key Interrupt")
         except Exception as e:
             print("WebSocket connection error:", e)
+            
+    def on_message(self, ws, message): # HERE !!!!!!!!!!!!!!!!!!
+        """
+        WebSocket Receive Message !!
+        """
+        print("Received:", message)
 
-    def on_open(self, ws):
-        """
-        WebSocket callback
-        """
+
+    def receive_messages(self):
+        while not kill_thread:
+            message = self.ws.recv()  # This line might need to be adjusted according to the WebSocket library you are using
+            print("Received:", message)
+    def on_error(ws, error):
+        print(error)
+    def on_open(self,ws):
         print("start on open")
-        try:
-            while not kill_thread:
-                if not self.queue.empty():
-                    msg = self.queue.get()
-                    json_data = json.dumps({'data': msg})
-                    self.ws.send(json_data)
-                    #print(json_data)
-                time.sleep(0.001)
-        except KeyboardInterrupt:
-            print("Key Interrupt")
+
 def handler_int(sig, stackframe):
     exit()
 
